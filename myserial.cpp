@@ -1,22 +1,46 @@
 #include "myserial.h"
 
-MySerial::MySerial(QString port, QObject *parent) : QObject(parent)
+MySerial::MySerial(QString port, unsigned char len, QObject *parent) : QObject(parent)
 {
-    if(port != nullptr){
+
+    flag_new_codogramm = false;
+    if(len != 0 && port != nullptr){
+        len_codogramm = len;
         serial_port.setPortName(port);
-        serial_port.setBaudRate(9600);
+        serial_port.setBaudRate(115200);
         serial_port.open(QSerialPort::ReadOnly);
-        connect(&serial_port, &QSerialPort::readyRead, this, &MySerial::new_data);
-    }else{
-        qDebug() << "порт не открыт";
+        if(serial_port.isOpen()){
+            connect(&serial_port, &QSerialPort::readyRead, this, &MySerial::new_data);
+            connect(&serial_port, &QSerialPort::errorOccurred, this, &MySerial::error_port);
+        }else{
+            qDebug() << "порт не открыт";
+        }
+    }else {
+        qDebug() << "неизвестна длинна кодограммы и имя порта";
     }
+
 
 }
 
 void MySerial::new_data(){
-    QByteArray arr;
+    QByteArray input_arr;
+    input_arr = serial_port.readAll();
+    if(input_arr[0] == (char)0x76 && arr.isEmpty()){
+        flag_new_codogramm = true;  // найдено начало новой кодограммы
+    }
+    if(flag_new_codogramm == true){
+        arr.append(input_arr); // сложим все пришедшие после начального пакета вместе
+    }
+    if(arr.length() == len_codogramm){ // когда длинна кодограммы будет соответствовать установленной длинне
+        check_data(); // проверим данные на контрольную сумму и стартовые байты
+        flag_new_codogramm = false;
+        arr.clear();
+    }
+}
+
+
+void MySerial::check_data(){
     QByteArray temp;
-    arr = serial_port.readAll();
     for(int i = 0; i < arr.length()-2; i++){  // не size !!!
         temp.append(arr[i]);
     }
@@ -24,12 +48,13 @@ void MySerial::new_data(){
     quint16 crc = (unsigned char)arr[arr.length() - 1];  // без unsigned char crc может посчитаться с ошибкой!
     crc <<= 8;
     crc += (unsigned char)arr[arr.length() - 2];
-    if(crc == check_crc){
+    if(crc == check_crc && arr[0] == (char)0x76 && (arr[1] == (char)0x77 || arr[1] == (char)0x78)){
         emit message(arr);
     }else{
-        qDebug() << crc << check_crc;
+        qDebug() << crc << check_crc;// << arr.toHex(':');
     }
 }
+
 
 quint16 MySerial::crc16_modbus(const QByteArray &array)
 {
@@ -79,4 +104,9 @@ quint16 MySerial::crc16_modbus(const QByteArray &array)
         wCRCWord ^= wCRCTable[nTemp];
     }
     return wCRCWord;
+}
+
+
+void MySerial::error_port(){
+    qDebug() << "ошибка порта. восстановите порт и перезапустите программу";
 }

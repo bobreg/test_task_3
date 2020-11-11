@@ -11,6 +11,8 @@ class MyUDP : public QObject
 public:
     explicit MyUDP(QObject *parent = nullptr);
     QTimer timer;
+    QByteArray data_from_port_1;
+    QByteArray data_from_port_2;
 
 signals:
 
@@ -21,6 +23,7 @@ public slots:
 private:
     QUdpSocket socket;
     void Send_data();
+    QByteArray data_for_recipient;
 
 };
 

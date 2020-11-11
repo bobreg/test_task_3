@@ -9,7 +9,7 @@ class MyThreadSocked : public QThread
 {
     Q_OBJECT
 public:
-    explicit MyThreadSocked(QString port = "COM4", QObject *parent = nullptr);
+    explicit MyThreadSocked(QString port = nullptr, unsigned char len = 0, QObject *parent = nullptr);
     void run();
 
 signals:
@@ -17,6 +17,9 @@ signals:
 
 private:
     QString name_port;
+    unsigned char len_codogramm;
+
+
 
 };
 

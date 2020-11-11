@@ -2,19 +2,33 @@
 
 MyUDP::MyUDP(QObject *parent) : QObject(parent)
 {
-    socket.bind(QHostAddress::LocalHost, 7755);
     connect(&timer, &QTimer::timeout, this, &MyUDP::Send_data);
+    data_for_recipient.append(0x55);
+    data_for_recipient.append(0x78);
 
 }
 
 void MyUDP::Send_data(){
-    qDebug() << "re-re udp";
+    //qDebug() << "port 1" << data_from_port_1.toHex(':');
+    //qDebug() << "port 2" << data_from_port_2.toHex(':');
+    data_for_recipient.append(data_from_port_1);
+    data_for_recipient.append(data_from_port_2);
+    qDebug() << data_for_recipient.toHex(':');
+    socket.writeDatagram(data_for_recipient, QHostAddress::LocalHost, 7755);
+    data_from_port_1.clear();
+    data_from_port_2.clear();
+    data_for_recipient.clear();
+    data_for_recipient.append(0x55);
+    data_for_recipient.append(0x78);
+    //qDebug() << "re-re udp";
 }
 
 void MyUDP::get_message_port1(QByteArray arr){
-    qDebug() << arr.toHex(':');
+    data_from_port_1.append(arr);
+    //qDebug() << arr.toHex(':');
 }
 
 void MyUDP::get_message_port2(QByteArray arr){
-    qDebug() << arr.toHex(':');
+    data_from_port_2.append(arr);
+    //qDebug() << arr.toHex(':');
 }
