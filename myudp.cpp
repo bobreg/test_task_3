@@ -14,7 +14,7 @@ void MyUDP::Send_data(){
     data_for_recipient.append(data_from_port_1);
     data_for_recipient.append(data_from_port_2);
     qDebug() << data_for_recipient.toHex(':');
-    socket.writeDatagram(data_for_recipient, QHostAddress::LocalHost, 7755);
+    socket.writeDatagram(data_for_recipient, QHostAddress("192.168.1.100"), 5577);  // отправим данные дальше по сети
     data_from_port_1.clear();
     data_from_port_2.clear();
     data_for_recipient.clear();
