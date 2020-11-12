@@ -3,15 +3,18 @@
 MySerial::MySerial(QString port, unsigned char len, QObject *parent) : QObject(parent)
 {
 
+    connect(&timer, &QTimer::timeout, this, &MySerial::restart_port);
+    serial_port = new QSerialPort(this);
     flag_new_codogramm = false;
     if(len != 0 && port != nullptr){
         len_codogramm = len;
-        serial_port.setPortName(port);
-        serial_port.setBaudRate(115200);
-        serial_port.open(QSerialPort::ReadOnly);
-        if(serial_port.isOpen()){
-            connect(&serial_port, &QSerialPort::readyRead, this, &MySerial::new_data);
-            connect(&serial_port, &QSerialPort::errorOccurred, this, &MySerial::error_port);
+        name_port = port;
+        serial_port->setPortName(name_port);
+        serial_port->setBaudRate(115200);
+        serial_port->open(QSerialPort::ReadOnly);
+        if(serial_port->isOpen()){
+            connect(serial_port, &QSerialPort::readyRead, this, &MySerial::new_data);
+            connect(serial_port, &QSerialPort::errorOccurred, this, &MySerial::error_port);
         }else{
             qDebug() << "порт не открыт";
         }
@@ -24,7 +27,7 @@ MySerial::MySerial(QString port, unsigned char len, QObject *parent) : QObject(p
 
 void MySerial::new_data(){
     QByteArray input_arr;
-    input_arr = serial_port.readAll();
+    input_arr = serial_port->readAll();
     if(input_arr[0] == (char)0x76 && arr.isEmpty()){
         flag_new_codogramm = true;  // найдено начало новой кодограммы
     }
@@ -49,6 +52,7 @@ void MySerial::check_data(){
     crc <<= 8;
     crc += (unsigned char)arr[arr.length() - 2];
     if(crc == check_crc && arr[0] == (char)0x76 && (arr[1] == (char)0x77 || arr[1] == (char)0x78)){
+        arr.remove(0, 2);
         emit message(arr);
     }else{
         qDebug() << crc << check_crc;// << arr.toHex(':');
@@ -108,5 +112,24 @@ quint16 MySerial::crc16_modbus(const QByteArray &array)
 
 
 void MySerial::error_port(){
-    qDebug() << "ошибка порта. восстановите порт и перезапустите программу";
+    qDebug() << "ошибка порта";
+    serial_port->close();
+    arr.clear();
+    timer.start(1000);
+}
+
+void MySerial::restart_port(){
+    delete serial_port;
+    serial_port = new QSerialPort(this);
+    serial_port->setPortName(name_port);
+    serial_port->setBaudRate(115200);
+    serial_port->open(QSerialPort::ReadOnly);
+    if(serial_port->isOpen()){
+        qDebug() << serial_port->isOpen();
+        connect(serial_port, &QSerialPort::readyRead, this, &MySerial::new_data);
+        connect(serial_port, &QSerialPort::errorOccurred, this, &MySerial::error_port);
+        timer.stop();
+    }else{
+        qDebug() << "Попытка открыть порт";
+    }
 }

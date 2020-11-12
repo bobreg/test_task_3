@@ -24,6 +24,7 @@ private:
     QUdpSocket socket;
     void Send_data();
     QByteArray data_for_recipient;
+    unsigned char index;
 
 };
 

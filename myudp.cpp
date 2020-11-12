@@ -20,6 +20,7 @@ void MyUDP::Send_data(){
     data_for_recipient.clear();
     data_for_recipient.append(0x55);
     data_for_recipient.append(0x78);
+    data_for_recipient.append(++index);
     //qDebug() << "re-re udp";
 }
 
