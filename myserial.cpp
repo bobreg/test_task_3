@@ -52,7 +52,7 @@ void MySerial::check_data(){
     crc <<= 8;
     crc += (unsigned char)arr[arr.length() - 2];
     if(crc == check_crc && arr[0] == (char)0x76 && (arr[1] == (char)0x77 || arr[1] == (char)0x78)){
-        arr.remove(0, 2);
+        arr.remove(0, 3);
         emit message(arr);
     }else{
         qDebug() << crc << check_crc;// << arr.toHex(':');
